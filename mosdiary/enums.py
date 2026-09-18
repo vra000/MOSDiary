@@ -51,3 +51,16 @@ class UserSex(StrEnum):
             'f': cls.FEMALE
         }
         return aliases.get(value)
+
+
+class MarkDynamicType(StrEnum):
+    """Типы динамики среднего балла оценки"""
+
+    NONE = 'NONE'
+    """Средний балл не изменился"""
+
+    UP = 'UP'
+    """Средний балл повышен"""
+
+    DOWN = 'DOWN'
+    """Средний балл понизился"""

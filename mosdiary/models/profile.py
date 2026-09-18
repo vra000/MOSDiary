@@ -1,116 +1,135 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 from datetime import date
 from uuid import UUID
-from typing import Any, Self
+from typing import Any
 
-from .enums import UserType, UserSex
-from .schemas import (
-    ProfileSchema,
-    UserSchema,
-    FamilySchema,
-    FamilyUserSchema,
-    FamilyChildGroupSchema,
-)
+from ..enums import UserType, UserSex
 
 
-@dataclass(frozen=True, slots=True)
-class User:
-    id: int
-    profiles: tuple[Profile, ...]
+class UserInfo(BaseModel):
+    """Информация о пользователе"""
+    model_config = ConfigDict(extra='ignore')
 
-    guid: str
-    person_id: UUID
+    email: str
+    """Электронный адрес почты"""
 
-    first_name: str
-    last_name: str
+    phone_number: str = Field(validation_alias='phone')
+    """Номер телефона без первой цифры"""
+
+    full_name: str = Field(validation_alias='name')
+    """ФИО пользователя"""
+
+    gender: UserSex
+    """Пол пользователя"""
+
+    education: list[UserInfoEducation]
+    """Образование пользователя"""
+
+    #TODO: Описать, типизировать
+    children: list
+
+    #TODO: Описать
+    agents: list[str]
+
+    #TODO: Описать
+    sub: str
+
+    broles: list[UserType]
+    """Роли пользователя"""
+
+    #TODO: Описать
+    person_uid: str = Field(validation_alias='person_id')
+
+    first_name: str = Field(validation_alias='given_name')
+    """Имя пользователя"""
+
+    family_name: str = Field(validation_alias='family_name')
+    """Фамилия пользователя"""
+
     middle_name: str | None
+    """Отчество пользователя"""
 
-    sex: UserSex
-    regional_auth: str
-    password_change_required: bool
-
-    email: str | None = field(default=None, repr=False)
-    phone_number: str | None = field(default=None, repr=False)
-    birth_date: date | None = field(default=None, repr=False)
-
-    auth_token: str = field(default="", repr=False)
-
-    @classmethod
-    def from_schema(cls, data: UserSchema) -> User:
-        raw_birth_date = data.get("date_of_birth")
-
-        return cls(
-            id=data["id"],
-            profiles=tuple(
-                Profile.from_schema(profile)
-                for profile in data["profiles"]
-            ),
-            guid=data["guid"],
-            person_id=UUID(data["person_id"]),
-            first_name=data["first_name"],
-            last_name=data["last_name"],
-            middle_name=data.get("middle_name"),
-            sex=UserSex(data["sex"]),
-            regional_auth=data["regional_auth"],
-            password_change_required=data["password_change_required"],
-            email=data.get("email"),
-            phone_number=data.get("phone_number"),
-            birth_date=(
-                date.fromisoformat(raw_birth_date)
-                if raw_birth_date is not None
-                else None
-            ),
-            auth_token=data["authentication_token"],
-        )
+    birth_date: date
+    """День рождение пользователя"""
 
 
-@dataclass(frozen=True, slots=True)
-class Profile:
+class UserInfoEducation(BaseModel):
+    """Информация об образовании пользователя"""
+    model_config = ConfigDict(extra='ignore')
+
+    training_begin_at: date
+    """Дата начала обучения"""
+
+    training_end_at: date
+    """Дата окончания обучения"""
+
+    study_class: UserInfoStudyClass = Field(validation_alias=AliasChoices('study_class', 'class'))
+    """Уфчебный класс учащегося"""
+
+    service_type: UserInfoEducationServiceType
+
+#TODO: Описать
+class UserInfoEducationServiceType(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
+    name: str
+    global_id: int
+
+class UserInfoStudyClass(BaseModel):
+    """Учебный учащегося"""
+    model_config = ConfigDict(extra='ignore')
+
     id: int
-    """ID в МЭШ"""
+    """ID класса"""
 
-    type: UserType
-    """Тип роли пользователя"""
+    uid: UUID
+    """UID класса"""
 
-    user_id: int
+    name: str
+    """Название класса. *К примеру, 9А-1*"""
 
-    school_id: int
-    """ID школы"""
+    parallel: UserInfoStudyClassParallel
+    """Параллель учащегося"""
 
-    school_short_name: str
-    """Короткое название школы"""
+    organization: UserInfoStudyClassOrganization
+    """Учебное учереждение учащегося"""
 
-    school_name: str
-    """Название школы"""
+    #TODO: Описать
+    education_stage_id: int
 
-    organization_id: str
-    """ID организации"""
-
-    personal_data_consent: bool
-    subject_ids: tuple[int, ...]
-    roles: tuple[object, ...]
-
-    @classmethod
-    def from_schema(cls, data: ProfileSchema) -> Profile:
-        return cls(
-            id=data["id"],
-            type=UserType(data["type"]),
-            user_id=data["user_id"],
-            school_id=data["school_id"],
-            school_short_name=data["school_shortname"],
-            school_name=data["school_name"],
-            organization_id=data["organization_id"],
-            personal_data_consent=data["agree_pers_data"],
-            subject_ids=tuple(data["subject_ids"]),
-            roles=tuple(data["roles"]),
-        )
+    #TODO: Описать
+    staff_ids: list[int]
 
 
-@dataclass(slots=True, frozen=True)
-class Family:
+class UserInfoStudyClassParallel(BaseModel):
+    """Информация о параллели обучающегося"""
+    model_config = ConfigDict(extra='ignore')
+
+    name: str
+    """Название праллели"""
+
+    id: int
+    """ID параллели"""
+
+
+class UserInfoStudyClassOrganization(BaseModel):
+    """Учебное учереждение учащегося"""
+
+    name: str
+    """Название учереждения"""
+
+    global_id: int
+    """Глобальный ID учереждения"""
+
+    #TODO: Если знаете что это, то опишите, пожалуйста
+    property_type_id: int
+
+
+class Family(BaseModel):
     """Семья"""
+    model_config = ConfigDict(extra='ignore')
 
     profile: FamilyProfile
     """Ваш профиль в семье"""
@@ -120,20 +139,10 @@ class Family:
 
     hash: str
 
-    @classmethod
-    def from_schema(cls, data: FamilySchema) -> Self:
-        return cls(
-            profile=FamilyProfile.from_schema(data["profile"]),
-            children=tuple(
-                FamilyChild.from_schema(child)
-                for child in data["children"]
-            )
-        )
 
-
-@dataclass(slots=True, frozen=True)
-class FamilyProfile:
+class FamilyProfile(BaseModel):
     """Ваш профиль в семье"""
+    model_config = ConfigDict(extra='ignore')
 
     last_name: str
     """Фамилия"""
@@ -144,7 +153,7 @@ class FamilyProfile:
     middle_name: str | None
     """Отчество"""
 
-    birth_date: date | None = field(default=None, repr=False)
+    birth_date: date | None
     """Дата рождения"""
 
     sex: UserSex
@@ -156,7 +165,7 @@ class FamilyProfile:
     id: int
     """МЭШ ID"""
 
-    phone_number: str
+    phone_number: str = Field(validation_alias='phone')
     """Номер телефона без первой цифры"""
 
     email: str
@@ -165,35 +174,13 @@ class FamilyProfile:
     snils: str
     """СНИЛС"""
 
-    role: UserType
+    role: UserType = Field(validation_alias=AliasChoices('role', 'type'))
     """Роль"""
 
-    @classmethod
-    def from_schema(cls, data: FamilyUserSchema) -> Self:
-        raw_birth_date = data.get("birth_date")
 
-        return cls(
-            last_name=data["last_name"],
-            first_name=data["first_name"],
-            middle_name=data.get("middle_name"),
-            birth_date=(
-                date.fromisoformat(raw_birth_date)
-                if raw_birth_date is not None
-                else None
-            ),
-            sex=UserSex(data["sex"]),
-            user_id=data["user_id"],
-            id=data["id"],
-            phone_number=data.get("phone"),
-            email=data.get("email"),
-            snils=data["snils"],
-            role=UserType(data["type"]),
-        )
-
-
-@dataclass(slots=True, frozen=True)
-class FamilyChild:
+class FamilyChild(BaseModel):
     """Ребёнок в семье"""
+    model_config = ConfigDict(extra='ignore')
 
     last_name: str
     """Фамилия ребёнка"""
@@ -204,7 +191,7 @@ class FamilyChild:
     middle_name: str | None
     """Отчество ребёнка"""
 
-    birth_date: date | None = field(default=None, repr=False)
+    birth_date: date | None
     """Дата рождения ребёнка"""
 
     sex: UserSex
@@ -216,7 +203,7 @@ class FamilyChild:
     id: int
     """МЭШ ID ребёнка"""
 
-    phone_number: str
+    phone_number: str = Field(validation_alias='phone')
     """Номер телефона ребёнка без первой цифры"""
 
     email: str
@@ -225,7 +212,7 @@ class FamilyChild:
     snils: str
     """СНИЛС ребёнка"""
 
-    role: UserType | None = field(default=None)
+    role: UserType | None = Field(validation_alias=AliasChoices('role', 'type'))
     """Роль ребёнка"""
 
     school: FamilyChildSchool
@@ -234,7 +221,7 @@ class FamilyChild:
     class_name: str
     """Название класса (к примеру, 4-Б2)"""
 
-    class_level: int
+    class_level: int = Field(validation_alias=AliasChoices('class_level', 'class_level_id'))
     """Номер класса ребёнка"""
 
     # TODO: Описать
@@ -246,7 +233,7 @@ class FamilyChild:
     age: int
     """Возраст ребёнка"""
 
-    subjects: list[FamilyChildSubject]
+    subjects: list[FamilyChildSubject] = Field(validation_alias=AliasChoices('subjects', 'groups'))
     """Школьные предметы ребёнка"""
 
     # TODO: Описать
@@ -255,28 +242,27 @@ class FamilyChild:
     representatives: list[FamilyChildRepresentative]
     """Законные представители ребёнка (к примеру, родители)"""
 
-    # TODO: Описать
-    sections: list[FamilyChildSelection]
-    """Что-то типа активных дополнительных кружков для ребёнка"""
-
     sudir_account_exists: bool
     """Есть аккаунт в СУДИР (Система управления доступом к информационным системам и ресурсам города Москвы)"""
 
-    # TODO: Описать
     sudir_login: Any | None
     """Логин СУДИР (Система управления доступом к информационным системам и ресурсам города Москвы)"""
 
     # TODO: Описать
-    is_legal_representetive: bool
+    is_legal_representetive: bool = Field(
+        validation_alias=AliasChoices(
+            'is_legal_representetive',
+            'is_legal_representative'
+        )
+    )
 
     # TODO: Описать
-    parallel_curriculum_id: Any | None
+    parallel_curriculum_id: int | None
 
     # TODO: Описать
     contingent_guid: UUID
 
-    # TODO: Конвертировать в datetime
-    enrollment_date: str
+    enrollment_date: date
     """Дата поступления в первый класс"""
 
     # TODO: Описать
@@ -297,9 +283,9 @@ class FamilyChild:
     physical_training_health_group_id: int
 
 
-@dataclass(slots=True, frozen=True)
-class FamilyChildSchool:
+class FamilyChildSchool(BaseModel):
     """Школа ребёнка в семье"""
+    model_config = ConfigDict(extra='ignore')
 
     id: int
     """ID школы"""
@@ -313,10 +299,10 @@ class FamilyChildSchool:
     county: str
     """Округ"""
 
-    principal_fullname: str
+    principal_fullname: str = Field(validation_alias=AliasChoices('principal_fullname', 'principal'))
     """ФИО директора"""
 
-    phone_number: str
+    phone_number: str = Field(validation_alias='phone')
     """Номер телефона школы без первой цифры"""
 
     # TODO: Описать
@@ -326,8 +312,7 @@ class FamilyChildSchool:
     municipal_unit_name: Any | None
 
 
-@dataclass(slots=True, frozen=True)
-class FamilyChildSubject:
+class FamilyChildSubject(BaseModel):
     """Школьный предмет ребёнка в семье"""
 
     id: int
@@ -343,8 +328,7 @@ class FamilyChildSubject:
     is_fake: bool
 
 
-@dataclass(slots=True, frozen=True)
-class FamilyChildRepresentative:
+class FamilyChildRepresentative(BaseModel):
     """Законный редставитель ребёнка (к примеру, родитель)"""
 
     person_id: UUID
@@ -369,25 +353,8 @@ class FamilyChildRepresentative:
     email: str
     """Электронный адрес почты закон. представителя"""
 
-    phone_number: str
+    phone_number: str = Field(validation_alias='phone')
     """Номер телефона закон. представителя без первой цифры"""
 
     snils: str
     """СНИЛС законного представителя"""
-
-
-# TODO: Дать нормальное описание
-class FamilyChildSelection:
-    """Что-то типа активных дополнительных кружков для ребёнка"""
-
-    id: int
-    """ID """
-
-    name: str
-    """Название """
-
-    # TODO: Описать
-    subject_id: Any | None
-
-    # TODO: Описать
-    is_fake: bool

@@ -228,7 +228,7 @@ class FamilyChild(BaseModel):
     class_unit_id: int
 
     class_uid: UUID
-    """UID класса ребёнка (что бы это не значило)"""
+    """UID класса ребёнка"""
 
     age: int
     """Возраст ребёнка"""

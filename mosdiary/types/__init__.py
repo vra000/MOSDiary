@@ -9,7 +9,7 @@ from .schedule_events import (
     ScheduleLesson,
     ScheduleOlympiad,
 )
-from .lessons import DayLessson, LessonDay
+from .lessons import LesssonShortcut, LessonDay
 from .marks import (
     Mark,
     MarkGrade,
@@ -54,7 +54,7 @@ __all__ = (
     'ScheduleExtraCurricular',
     'ScheduleLesson',
     'ScheduleOlympiad',
-    'DayLessson',
+    'LesssonShortcut',
     'LessonDay',
     'Mark',
     'MarkGrade',

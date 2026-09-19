@@ -175,6 +175,63 @@ class SubjectMarkPeriodMark(_MarkBase):
     """Дата изменения оценки"""
 
 
+class ScheduleEventMark(BaseModel):
+    """Оценка из события расписания"""
+    model_config = ConfigDict(extra='ignore')
+
+    comment: str | None
+    """Комментарий к оценке"""
+
+    is_exam: bool
+    """Является ли оценка экзаменационной"""
+
+    is_point: bool
+    """Является ли оценка точкой"""
+
+    #TODO: Описать. Скорее всего, дата выставления точки
+    point_date: Any | None
+
+    #TODO: Описать. Скорее всего, система оценивания
+    original_grade_system_type: str
+
+    #TODO: Описать
+    criteria: list[Any] | None
+
+    value: str
+    """Значение оценки"""
+
+    values: list[ScheduleEventMarkValue]
+    """Значения оценки в системах оценивания"""
+
+    weight: int
+    """Вес оценки"""
+
+
+class ScheduleEventMarkValue(BaseModel):
+    """Значение оценки из события расписания в системе оценивания"""
+    model_config = ConfigDict(extra='ignore')
+
+    grade: ScheduleEventMarkGrade
+    """Значения оценки по разным шкалам"""
+
+    grade_system_type: str
+    """Тип системы оценивания"""
+
+
+class ScheduleEventMarkGrade(BaseModel):
+    """Оценка из события расписания, приведённая к разным шкалам"""
+    model_config = ConfigDict(extra='ignore')
+
+    origin: str
+    """Исходное значение оценки"""
+
+    five: float | None = None
+    """Оценка по пятибалльной шкале"""
+
+    hundred: float | None = None
+    """Оценка по стобалльной шкале"""
+
+
 class MarkValue(BaseModel):
     """Значение оценки в системе оценивания"""
     model_config = ConfigDict(extra='ignore')

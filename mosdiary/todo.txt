@@ -1,0 +1,3 @@
+Список ролей: https://school.mos.ru/v1/roles/allGlobal/
+
+Для рефреша ещё есть GET https://school.mos.ru/v2/token/refresh?roleId=1&subsystem=1 . В ответе возвращает aupd токен

@@ -1,5 +1,5 @@
 from .homework import Homework
-from .events import (
+from .schedule_events import (
     ScheduleEvent,
     ScheduleEventHomework,
     ScheduleEventHomeworkMaterial,

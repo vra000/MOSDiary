@@ -64,3 +64,28 @@ class MarkDynamicType(StrEnum):
 
     DOWN = 'DOWN'
     """Средний балл понизился"""
+
+
+#TODO: Описать внутренние enumы
+class ScheduleEventType(StrEnum):
+    """Типы событий в расписании"""
+
+    LESSON = 'PLAN'
+    """Обычный школьный урок"""
+
+    OLYMPIAD = 'OLYMPIAD'
+    """Олимпиада"""
+
+    EC = 'EC'
+    """Внеурочная деятельность"""
+
+    AE = 'AE'
+    """Дополнительное образование"""
+
+    AFISHA = 'AFISHA'
+
+    ORGANIZER = 'ORGANIZER'
+
+    PROF = 'PROF'
+
+    EVENTS = 'EVENTS'

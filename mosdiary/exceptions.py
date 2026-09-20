@@ -50,6 +50,14 @@ class InvalidVerificationCodeException(QRLoginException, ValueError):
     """Код второго фактора имеет неверный формат."""
 
 
+class VerificationCodeExpiredException(QRLoginException, TimeoutError):
+    """Срок действия кода второго фактора истёк."""
+
+
+class VerificationAttemptsExhaustedException(QRLoginException):
+    """Попытки ввода кода второго фактора исчерпаны."""
+
+
 class LoginTokenMissingException(QRLoginException):
     """Mos ID не вернул токены после успешного входа."""
 
@@ -67,4 +75,6 @@ __all__ = (
     'QRLoginInitializationException',
     'QRLoginStateException',
     'TwoFactorRequiredException',
+    'VerificationAttemptsExhaustedException',
+    'VerificationCodeExpiredException',
 )

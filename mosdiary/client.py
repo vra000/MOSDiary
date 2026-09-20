@@ -4,7 +4,7 @@ from datetime import date
 from html import unescape
 from inspect import isawaitable
 from io import BytesIO
-from re import IGNORECASE, search
+from re import DOTALL, IGNORECASE, search
 from time import time
 from types import TracebackType
 from typing import Literal
@@ -29,6 +29,8 @@ from .exceptions import (
     QRLoginInitializationException,
     QRLoginStateException,
     TwoFactorRequiredException,
+    VerificationAttemptsExhaustedException,
+    VerificationCodeExpiredException,
 )
 from .enums import ScheduleEventType
 from .types.profile import UserInfo, Family
@@ -345,6 +347,11 @@ class MOSDiaryClient:
 
         Returns:
             tuple[str, str]: Пара `(aupd_token, aupd_refresh_token)`.
+
+        Raises:
+            InvalidVerificationCodeException: Код имеет неверный формат.
+            VerificationCodeExpiredException: Срок действия кода истёк.
+            VerificationAttemptsExhaustedException: Попытки ввода исчерпаны.
         """
         try:
             method_name = {
@@ -469,6 +476,23 @@ class MOSDiaryClient:
                 )
                 async with response:
                     response.raise_for_status()
+                    if response.url.path in code_paths:
+                        config = search(
+                            r'var vrfCodeConf\s*=\s*(\{.*?\});',
+                            await response.text(),
+                            DOTALL,
+                        )
+                        if config is not None:
+                            error = search(r'"error"\s*:\s*"([^"]+)"', config[1])
+                            ttl = search(r'"ttl"\s*:\s*(\d+)', config[1])
+                            attempts = search(r'"attemptsLeft"\s*:\s*(\d+)', config[1])
+                            if (
+                                (error is not None and search(r'ист[её]к|просроч', error[1], IGNORECASE))
+                                or (ttl is not None and int(ttl[1]) == 0)
+                            ):
+                                raise VerificationCodeExpiredException('Срок действия кода подтверждения истёк')
+                            if attempts is not None and int(attempts[1]) == 0:
+                                raise VerificationAttemptsExhaustedException('Попытки ввода кода подтверждения исчерпаны')
 
             if response.url.path == '/sps/login/ur/askToTrust':
                 response = await self._send_request(

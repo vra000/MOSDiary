@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field
-from datetime import date
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
+from datetime import date, datetime
 from uuid import UUID
 from typing import Any
 
@@ -21,7 +21,7 @@ class UserInfo(BaseModel):
     full_name: str = Field(validation_alias='name')
     """ФИО пользователя"""
 
-    gender: UserSex
+    sex: UserSex = Field(validation_alias='gender')
     """Пол пользователя"""
 
     education: list[UserInfoEducation]
@@ -358,3 +358,82 @@ class FamilyChildRepresentative(BaseModel):
 
     snils: str
     """СНИЛС законного представителя"""
+
+
+class ProfileDeatail(BaseModel):
+    """Детальнвя информация о профиле"""
+    model_config = ConfigDict(extra='ignore')
+
+    #TODO: Описать
+    user_id: int = Field(validation_alias='userId')
+
+    info: ProfileDetailInfo
+    """Детальная информация о профиле"""
+
+    roles: list[ProfileDetailRole]
+    """Роли пользователя"""
+
+    login: str
+    """Логин пользователя"""
+
+
+class ProfileDetailInfo(BaseModel):
+    """Детальная информация о профиле"""
+    model_config = ConfigDict(extra='ignore')
+
+    birth_date: date = Field(validation_alias='birthdate')
+    """День рождение"""
+
+    @field_validator('birth_date', mode='before')
+    @classmethod
+    def parse_birth_date(cls, value: Any) -> Any:
+        if isinstance(value, str) and '.' in value:
+            return datetime.strptime(value, '%d.%m.%Y').date()
+        return value
+
+    email: str = Field(validation_alias='mail')
+    """Почта"""
+
+    sex: UserSex = Field(validation_alias='gender')
+    """Пол пользователя"""
+
+    #TODO: Описать
+    trusted: bool
+
+    first_name: str = Field(validation_alias='FirstName')
+    """Имя"""
+
+    phone_number: str = Field(validation_alias='mobile')
+    """Номер телефона без первой цифры"""
+
+    #TODO: Описать
+    guid: UUID
+
+    #TODO: Описать
+    failed: bool
+
+    last_name: str = Field(validation_alias='LastName')
+    """Фамилия"""
+
+    #TODO: Описать
+    error: Any | None
+
+    middle_name: str = Field(validation_alias='MiddleName')
+    """Отчество"""
+
+    snils: str
+    """СНИЛС"""
+
+
+class ProfileDetailRole(BaseModel):
+    """Роль пользователя в детальной информации"""
+    model_config = ConfigDict(extra='ignore')
+
+    id: int
+    """ID роли"""
+
+    title: str
+    """Название роли"""
+
+    subsystems: list[dict]
+    """Подсистемы, доступные для данной роли"""

@@ -33,7 +33,7 @@ from .exceptions import (
     VerificationCodeExpiredException,
 )
 from .enums import ScheduleEventType
-from .types.profile import UserInfo, Family
+from .types.profile import UserInfo, Family, ProfileDeatail
 from .types.homework import Homework
 from .types.marks import Mark, SubjectMark
 from .types.lessons import LessonDay
@@ -57,7 +57,6 @@ ALL_SCHEDULE_EVENT_INCLUDES: tuple[ScheduleEventInclude, ...] = (
 
 
 class MOSDiaryClient:
-    BASE_URL = 'https://school.mos.ru/api/'
     def __init__(self, aupd_token: str | None = None, timeout: float = 30, user_agent: str | None = None):
         """
         Клиент МЭШ
@@ -147,7 +146,7 @@ class MOSDiaryClient:
             raise ValueError(f'Неизвестный тип возврата: {return_type}')
 
         url = (
-            self.BASE_URL + endpoint
+            'https://school.mos.ru/api/' + endpoint
             if not endpoint.startswith('http')
             else endpoint
         )
@@ -530,15 +529,14 @@ class MOSDiaryClient:
         self.aupd_token = aupd_token
         return aupd_token, aupd_refresh_token
 
-    #TODO: Проверить
-    async def get_detail_info(self):
+
+    async def get_detail_info(self)-> ProfileDeatail:
         """Получить подробную информацию о текущем пользователе.
 
         Returns:
-            dict: Необработанный JSON-объект ответа `v3/userinfo`.
+            ProfileDeatail: Подробные данные профиля.
         """
-        resp = await self._send_request('GET', 'https://school.mos.ru/v3/userinfo')
-        return resp
+        return ProfileDeatail.model_validate(await self._send_request('GET', 'https://school.mos.ru/v3/userinfo'))
 
 
     async def get_family_info(self)-> Family:

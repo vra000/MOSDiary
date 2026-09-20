@@ -345,12 +345,7 @@ class MOSDiaryClient:
             trust_browser (`bool`): Не запрашивать второй фактор при следующих входах из этой сессии.
 
         Returns:
-            tuple[str, str]: Пара `(aupd_token, aupd_refresh_token)`.
-
-        Raises:
-            InvalidVerificationCodeException: Код имеет неверный формат.
-            VerificationCodeExpiredException: Срок действия кода истёк.
-            VerificationAttemptsExhaustedException: Попытки ввода исчерпаны.
+            tuple[str, str]: Пара `(aupd_token, aupd_refresh_token)`
         """
         try:
             method_name = {

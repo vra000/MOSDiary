@@ -41,7 +41,7 @@ class ScheduleLesson(_ScheduleEventBase):
     #TODO: Описать. Может быть "NORMAL"
     lesson_type: str
 
-    #TODO: Описать. Может быть THEMATIC_TEST
+    #TODO: Описать. Может быть THEMATIC_TEST (контрольная работа)
     course_lesson_type: str | None
 
     #TODO: Описать

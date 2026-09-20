@@ -196,7 +196,11 @@ ScheduleEvent: TypeAlias = (
 
 
 def parse_schedule_event(data: Any)-> ScheduleEvent:
-    """Создать модель события расписания по значению `source`."""
+    """Создать модель события расписания по значению `source`.
+
+    Returns:
+        ScheduleEvent: Модель, соответствующая типу события в поле `source`.
+    """
     if isinstance(data, dict):
         try:
             source = ScheduleEventType(data.get('source'))

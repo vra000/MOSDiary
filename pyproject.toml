@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "GPL-3.0-only"
 authors = [
-    { name = "vra000", email = "voronin.a.romanvra@mail.ru" },
+    { name = "vra000", email = "voronin.a.romanvra@mail.ru" }
 ]
 keywords = ["moscow", "school", "diary", "mesh", "мэш"]
 classifiers = [
@@ -23,13 +23,13 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
-    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries :: Python Modules"
 ]
 dependencies = [
     "aiohttp>=3.9,<4",
     "pydantic>=2,<3",
     "segno>=1.6,<2",
-    "yarl>=1.9,<2",
+    "yarl>=1.9,<2"
 ]
 
 [project.urls]

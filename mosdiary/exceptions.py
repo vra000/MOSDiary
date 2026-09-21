@@ -6,6 +6,10 @@ class AuthenticationRequiredException(MOSDiaryBaseException):
     """Для запроса не передан токен авторизации."""
 
 
+class TokenExpired(MOSDiaryBaseException, TimeoutError):
+    """Срок действия `aupd_token` истёк."""
+
+
 class InvalidResponseException(MOSDiaryBaseException):
     """МЭШ вернул ответ неожиданного формата."""
 
@@ -74,6 +78,7 @@ __all__ = (
     'QRLoginExpiredException',
     'QRLoginInitializationException',
     'QRLoginStateException',
+    'TokenExpired',
     'TwoFactorRequiredException',
     'VerificationAttemptsExhaustedException',
     'VerificationCodeExpiredException',

@@ -7,7 +7,6 @@
 [![PyPI](https://img.shields.io/pypi/v/mosdiary?color=3775A9&label=PyPI&logo=pypi&logoColor=white)](https://pypi.org/project/mosdiary/)
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB.svg?logo=python&logoColor=white)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](https://github.com/vra000/MOSDiary/blob/main/LICENSE)
-[![AsyncIO](https://img.shields.io/badge/asyncio-ready-2C5BB4.svg)](https://docs.python.org/3/library/asyncio.html)
 
 [Установка](#-установка) · [Быстрый старт](#-быстрый-старт) · [Авторизация](#-авторизация) · [Методы](#-доступные-методы)
 

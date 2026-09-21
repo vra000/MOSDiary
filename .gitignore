@@ -220,3 +220,7 @@ __marimo__/
 
 test*
 .*/
+!.github/
+!.github/workflows/
+!.github/workflows/*.yml
+!.github/workflows/*.yaml

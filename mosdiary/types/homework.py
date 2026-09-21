@@ -7,7 +7,7 @@ class Homework(BaseModel):
     """Домашнее задание"""
     model_config = ConfigDict(extra='ignore')
 
-    #TODO: Описать
+    #TODO: Описать. Может быть oo и ec
     type: str
 
     description: str
@@ -16,8 +16,9 @@ class Homework(BaseModel):
     #TODO: Описать
     comments: list
 
-    #TODO: Описать
-    materials: list
+    #TODO: Типизировать подробнее
+    materials: list[dict]
+    """ЦДЗ"""
 
     homework: str
     """Текст Д/З"""

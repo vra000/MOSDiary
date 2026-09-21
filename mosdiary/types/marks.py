@@ -136,8 +136,8 @@ class _MarkBase(BaseModel):
     is_point: bool
     """Является ли оценка точкой"""
 
-    #TODO: Описать
     is_exam: bool
+    """Оценка с весом > 1"""
 
     #TODO: Описать. Скорее всего, система оценивания
     original_grade_system_type: str
@@ -182,8 +182,9 @@ class ScheduleEventMark(BaseModel):
     comment: str | None
     """Комментарий к оценке"""
 
+    #TODO: Убедиться, что за оценку с тройным коэфицентом тоже True
     is_exam: bool
-    """Является ли оценка экзаменационной"""
+    """Оценка с весом > 1"""
 
     is_point: bool
     """Является ли оценка точкой"""

@@ -260,11 +260,11 @@ class MarkGrade(BaseModel):
     origin: str
     """Исходное значение оценки"""
 
-    five: float
+    five: float | None = None
     """Оценка по пятибалльной шкале"""
 
-    ten: float
+    ten: float | None = None
     """Оценка по десятибалльной шкале"""
 
-    hundred: float
+    hundred: float | None = None
     """Оценка по стобалльной шкале"""

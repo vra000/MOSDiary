@@ -50,8 +50,8 @@ class Homework(BaseModel):
     is_done: bool
     """Д/З помечено как выполненное"""
 
-    has_teacher_answer: bool
-    """Ответил ли учитель на прикреплённое Д/З"""
+    has_teacher_answer: bool | None
+    """Ответил ли учитель на прикреплённое Д/З, если статус известен"""
 
     id: int = Field(validation_alias='homework_id')
     """ID домашней работы"""

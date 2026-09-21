@@ -129,19 +129,18 @@ with open("mos-id-qr.png", "wb") as file:
 
 ## 📚 Доступные методы
 
-
-| Метод                                | Результат    | Назначение                                                 |
-| ----------------------------------------- | --------------------- | -------------------------------------------------------------------- |
-| `get_base_info()`                         | `UserInfo`            | Основная информация о пользователе    |
-| `get_detail_info()`                       | `ProfileDeatail`      | Расширенные данные профиля                   |
-| `get_family_info()`                       | `Family`              | Профиль, дети и представители семьи    |
-| `get_lessons(dates)`                      | `list[LessonDay]`     | Краткое расписание на указанные даты |
-| `get_schedule_events(from_date, to_date)` | `list[ScheduleEvent]` | Подробные события расписания               |
-| `get_homework(from_date, to_date)`        | `list[Homework]`      | Домашние задания за период                    |
-| `get_marks()`                             | `list[SubjectMark]`   | Сводные оценки по предметам                  |
-| `get_date_marks(from_date, to_date)`      | `list[Mark]`          | Оценки за период                                       |
-| `refresh_session(role_id=1)`              | `str`                 | Обновление токена после QR-входа           |
-| `logout()`                                | `bool`                | Завершение текущей сессии                     |
+| Метод | Результат | Назначение |
+|---|---|---|
+| `get_base_info()` | `UserInfo` | Основная информация о пользователе |
+| `get_detail_info()` | `ProfileDeatail` | Расширенные данные профиля |
+| `get_family_info()` | `Family` | Профиль, дети и представители семьи |
+| `get_lessons(dates)` | `list[LessonDay]` | Краткое расписание на указанные даты |
+| `get_schedule_events(from_date, to_date)` | `list[ScheduleEvent]` | Подробные события расписания |
+| `get_homework(from_date, to_date)` | `list[Homework]` | Домашние задания за период |
+| `get_marks()` | `list[SubjectMark]` | Сводные оценки по предметам |
+| `get_date_marks(from_date, to_date)` | `list[Mark]` | Оценки за период |
+| `refresh_session(role_id=1)` | `str` | Обновление токена после QR-входа |
+| `logout()` | `bool` | Завершение текущей сессии |
 
 Все даты передаются как объекты `datetime.date`. Ответы представлены Pydantic-моделями: их можно читать через атрибуты или преобразовывать в словари с помощью `model_dump()`.
 

@@ -12,10 +12,10 @@ class UserInfo(BaseModel):
     """Информация о пользователе"""
     model_config = ConfigDict(extra='ignore')
 
-    email: str
+    email: str | None = None
     """Электронный адрес почты"""
 
-    phone_number: str = Field(validation_alias='phone')
+    phone_number: str | None = Field(default=None, validation_alias='phone')
     """Номер телефона без первой цифры"""
 
     full_name: str = Field(validation_alias='name')
@@ -48,7 +48,7 @@ class UserInfo(BaseModel):
     family_name: str = Field(validation_alias='family_name')
     """Фамилия пользователя"""
 
-    middle_name: str | None
+    middle_name: str | None = None
     """Отчество пользователя"""
 
     birth_date: date
@@ -150,10 +150,10 @@ class FamilyProfile(BaseModel):
     first_name: str
     """Имя"""
 
-    middle_name: str | None
+    middle_name: str | None = None
     """Отчество"""
 
-    birth_date: date | None
+    birth_date: date
     """Дата рождения"""
 
     sex: UserSex
@@ -165,10 +165,10 @@ class FamilyProfile(BaseModel):
     id: int
     """МЭШ ID"""
 
-    phone_number: str = Field(validation_alias='phone')
+    phone_number: str | None = Field(default=None, validation_alias='phone')
     """Номер телефона без первой цифры"""
 
-    email: str
+    email: str | None = None
     """Электронный адрес почты"""
 
     snils: str
@@ -188,10 +188,10 @@ class FamilyChild(BaseModel):
     first_name: str
     """Имя ребёнка"""
 
-    middle_name: str | None
+    middle_name: str | None = None
     """Отчество ребёнка"""
 
-    birth_date: date | None
+    birth_date: date
     """Дата рождения ребёнка"""
 
     sex: UserSex
@@ -203,10 +203,10 @@ class FamilyChild(BaseModel):
     id: int
     """МЭШ ID ребёнка"""
 
-    phone_number: str = Field(validation_alias='phone')
+    phone_number: str | None = Field(default=None, validation_alias='phone')
     """Номер телефона ребёнка без первой цифры"""
 
-    email: str
+    email: str | None = None
     """Электронный адрес почты ребёнка"""
 
     snils: str
@@ -302,7 +302,7 @@ class FamilyChildSchool(BaseModel):
     principal_fullname: str = Field(validation_alias=AliasChoices('principal_fullname', 'principal'))
     """ФИО директора"""
 
-    phone_number: str = Field(validation_alias='phone')
+    phone_number: str | None = Field(default=None, validation_alias='phone')
     """Номер телефона школы без первой цифры"""
 
     # TODO: Описать
@@ -340,7 +340,7 @@ class FamilyChildRepresentative(BaseModel):
     first_name: str
     """Имя закон. представителя"""
 
-    middle_name: str
+    middle_name: str | None = None
     """Отчество закон. представителя"""
 
     # TODO: Описать. Возможно, ID роли (у родителя 1). Позже заменить на переменную role
@@ -350,10 +350,10 @@ class FamilyChildRepresentative(BaseModel):
     type: str
     """Тип законного представителя"""
 
-    email: str
+    email: str | None = None
     """Электронный адрес почты закон. представителя"""
 
-    phone_number: str = Field(validation_alias='phone')
+    phone_number: str | None = Field(default=None, validation_alias='phone')
     """Номер телефона закон. представителя без первой цифры"""
 
     snils: str
@@ -391,10 +391,10 @@ class ProfileDetailInfo(BaseModel):
             return datetime.strptime(value, '%d.%m.%Y').date()
         return value
 
-    email: str = Field(validation_alias='mail')
+    email: str | None = Field(default=None, validation_alias='mail')
     """Почта"""
 
-    sex: UserSex = Field(validation_alias='gender')
+    sex: UserSex | None = Field(default=None, validation_alias='gender')
     """Пол пользователя"""
 
     #TODO: Описать
@@ -403,7 +403,7 @@ class ProfileDetailInfo(BaseModel):
     first_name: str = Field(validation_alias='FirstName')
     """Имя"""
 
-    phone_number: str = Field(validation_alias='mobile')
+    phone_number: str | None = Field(default=None, validation_alias='mobile')
     """Номер телефона без первой цифры"""
 
     #TODO: Описать
@@ -418,7 +418,7 @@ class ProfileDetailInfo(BaseModel):
     #TODO: Описать
     error: Any | None
 
-    middle_name: str = Field(validation_alias='MiddleName')
+    middle_name: str | None = Field(default=None, validation_alias='MiddleName')
     """Отчество"""
 
     snils: str

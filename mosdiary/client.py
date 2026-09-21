@@ -28,6 +28,7 @@ from .exceptions import (
     QRLoginExpiredException,
     QRLoginInitializationException,
     QRLoginStateException,
+    TokenExpired,
     TwoFactorRequiredException,
     VerificationAttemptsExhaustedException,
     VerificationCodeExpiredException,
@@ -173,6 +174,10 @@ class MOSDiaryClient:
                     **kwargs,
                 )
 
+                if use_auth and response.status == 401:
+                    response.release()
+                    raise TokenExpired('Срок действия aupd_token истёк')
+
                 if return_type == 'response':
                     return response
 
@@ -188,7 +193,7 @@ class MOSDiaryClient:
                     if not isinstance(data, dict):
                         raise InvalidResponseException('Ответ API не является JSON-объектом')
                     return data
-            except (ClientSSLError, ServerFingerprintMismatch):
+            except (ClientSSLError, ServerFingerprintMismatch, TokenExpired):
                 raise
             except (ClientConnectionError, TimeoutError):
                 # POST could already have been processed, and a streamed body

@@ -5,8 +5,8 @@
 **Неофициальный асинхронный Python-клиент для школьного дневника МЭШ**
 
 [![PyPI](https://img.shields.io/pypi/v/mosdiary?color=3775A9&label=PyPI&logo=pypi&logoColor=white)](https://pypi.org/project/mosdiary/)
-![Python](https://img.shields.io/badge/python-3.11%2B-3776AB.svg?logo=python&logoColor=white)
-[![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](https://github.com/vra000/MOSDiary/blob/main/LICENSE)
+![Python](https://img.shields.io/badge/python-3.11%2B-FFD43B.svg?logo=python&logoColor=306998)
+[![License](https://img.shields.io/badge/license-GPL--3.0-2EA44F.svg?logo=gnu&logoColor=white)](https://github.com/vra000/MOSDiary/blob/main/LICENSE)
 
 [Установка](#-установка) · [Быстрый старт](#-быстрый-старт) · [Авторизация](#-авторизация) · [Методы](#-доступные-методы)
 

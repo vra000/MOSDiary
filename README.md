@@ -5,8 +5,8 @@
 **Неофициальный асинхронный Python-клиент для школьного дневника МЭШ**
 
 [![PyPI](https://img.shields.io/pypi/v/mosdiary?color=3775A9&label=PyPI&logo=pypi&logoColor=white)](https://pypi.org/project/mosdiary/)
-![Python](https://img.shields.io/badge/python-3.11%2B-3776AB.svg?logo=python&logoColor=white)
-[![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](https://github.com/vra000/MOSDiary/blob/main/LICENSE)
+![Python](https://img.shields.io/badge/python-3.11%2B-FFD43B.svg?logo=python&logoColor=306998)
+[![License](https://img.shields.io/badge/license-GPL--3.0-2EA44F.svg?logo=gnu&logoColor=white)](https://github.com/vra000/MOSDiary/blob/main/LICENSE)
 [![AsyncIO](https://img.shields.io/badge/asyncio-ready-2C5BB4.svg)](https://docs.python.org/3/library/asyncio.html)
 
 [Установка](#-установка) · [Быстрый старт](#-быстрый-старт) · [Авторизация](#-авторизация) · [Методы](#-доступные-методы)
@@ -160,6 +160,32 @@ marks = await diary.get_date_marks(today - timedelta(days=30), today)
 for mark in marks:
     print(mark.date.strftime("%d.%m"), mark.subject_name, mark.value)
 ```
+
+## ⚠️ Обработка ошибок
+
+Сетевые, HTTP-ошибки и некорректные ответы МЭШ имеют общий базовый тип `APIException`:
+
+```python
+from mosdiary.exceptions import APIException, TokenExpired
+
+try:
+    marks = await diary.get_marks()
+except TokenExpired:
+    print("Токен истёк — требуется повторный вход")
+except APIException as error:
+    print(f"Не удалось получить данные МЭШ: {error}")
+```
+
+Для более точной обработки доступны подклассы:
+
+- `APIHTTPException` — API вернул ошибочный HTTP-статус;
+- `APIConnectionException` — соединение с МЭШ не установлено или разорвано;
+- `APITimeoutException` — истёк тайм-аут запроса;
+- `InvalidResponseException` — ответ не удалось декодировать или проверить по ожидаемой схеме.
+
+`APIHTTPException` содержит атрибуты `status_code`, `method` и `url`. URL сохраняется без query-параметров.
+
+Для обработки любого контролируемого исключения библиотеки используйте `MOSDiaryBaseException`.
 
 ## 🛠 Разработка
 

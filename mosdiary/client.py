@@ -7,19 +7,26 @@ from io import BytesIO
 from re import DOTALL, IGNORECASE, search
 from time import time
 from types import TracebackType
-from typing import Literal
+from typing import Literal, TypeVar
 
 from aiohttp import (
+    ClientError,
     ClientConnectionError,
     ClientResponse,
+    ClientResponseError,
     ClientSession,
     ClientSSLError,
+    ContentTypeError,
     ServerFingerprintMismatch,
 )
-from pydantic import ValidationError
+from pydantic import BaseModel
 from yarl import URL
 
 from .exceptions import (
+    APIConnectionException,
+    APIException,
+    APIHTTPException,
+    APITimeoutException,
     AuthenticationRequiredException,
     InvalidLoginParameterException,
     InvalidResponseException,
@@ -55,6 +62,36 @@ ALL_SCHEDULE_EVENT_INCLUDES: tuple[ScheduleEventInclude, ...] = (
     'health_status',
     'nonattendance_reason_id',
 )
+
+ModelT = TypeVar('ModelT', bound=BaseModel)
+ParsedT = TypeVar('ParsedT')
+
+
+def _validate_model(
+    model: type[ModelT],
+    data: object,
+    error_message: str
+) -> ModelT:
+    try:
+        return model.model_validate(data)
+    except (TypeError, ValueError) as error:
+        raise InvalidResponseException(error_message) from error
+
+
+def _parse_response_list(
+    response: dict,
+    *,
+    key: str,
+    parser: Callable[[object], ParsedT],
+    error_message: str
+) -> list[ParsedT]:
+    try:
+        payload = response[key]
+        if not isinstance(payload, list):
+            raise TypeError(f'Поле {key} не является списком')
+        return [parser(item) for item in payload]
+    except (KeyError, TypeError, ValueError) as error:
+        raise InvalidResponseException(error_message) from error
 
 
 class MOSDiaryClient:
@@ -128,6 +165,18 @@ class MOSDiaryClient:
         if not session.closed:
             await session.close()
 
+    @staticmethod
+    def _raise_for_status(response: ClientResponse) -> None:
+        try:
+            response.raise_for_status()
+        except ClientResponseError as error:
+            raise APIHTTPException(
+                f'МЭШ вернул HTTP {response.status}',
+                status_code=response.status,
+                method=response.method,
+                url=str(response.url.with_query(None))
+            ) from error
+
     async def _send_request(
         self,
         method: Literal['GET', 'POST'],
@@ -178,6 +227,9 @@ class MOSDiaryClient:
                     response.release()
                     raise TokenExpired('Срок действия aupd_token истёк')
 
+                if return_type != 'bool':
+                    self._raise_for_status(response)
+
                 if return_type == 'response':
                     return response
 
@@ -185,28 +237,34 @@ class MOSDiaryClient:
                     if return_type == 'bool':
                         return 200 <= response.status < 300
 
-                    response.raise_for_status()
                     if return_type == 'text':
                         return await response.text()
 
-                    data = await response.json()
+                    try:
+                        data = await response.json()
+                    except (ContentTypeError, ValueError) as error:
+                        raise InvalidResponseException('Ответ API не является корректным JSON') from error
                     if not isinstance(data, dict):
                         raise InvalidResponseException('Ответ API не является JSON-объектом')
                     return data
-            except (ClientSSLError, ServerFingerprintMismatch, TokenExpired):
-                raise
-            except (ClientConnectionError, TimeoutError):
+            except (ClientSSLError, ServerFingerprintMismatch) as error:
+                raise APIConnectionException('Не удалось установить защищённое соединение с МЭШ') from error
+            except ClientConnectionError as error:
                 # POST could already have been processed, and a streamed body
                 # could already be consumed. Neither can be safely replayed.
-                if (
-                    method != 'GET'
-                    or 'data' in kwargs
-                    or retry_number >= 2
-                ):
-                    raise
-
-                await sleep(0.5 * 2 ** retry_number)
-                retry_number += 1
+                if method == 'GET' and 'data' not in kwargs and retry_number < 2:
+                    await sleep(0.5 * 2 ** retry_number)
+                    retry_number += 1
+                    continue
+                raise APIConnectionException('Не удалось соединиться с МЭШ') from error
+            except TimeoutError as error:
+                if method == 'GET' and 'data' not in kwargs and retry_number < 2:
+                    await sleep(0.5 * 2 ** retry_number)
+                    retry_number += 1
+                    continue
+                raise APITimeoutException('Истёк тайм-аут запроса к МЭШ') from error
+            except ClientError as error:
+                raise APIException('Не удалось выполнить запрос к МЭШ') from error
 
 
     async def logout(self)-> bool:
@@ -277,7 +335,6 @@ class MOSDiaryClient:
             use_auth=False,
         )
         async with response:
-            response.raise_for_status()
             html = await response.text()
 
         match = search(r'url=([^"\'>]+)', html, IGNORECASE)
@@ -291,8 +348,7 @@ class MOSDiaryClient:
             use_auth=False,
             headers={'Referer': 'https://school.mos.ru/'}
         )
-        async with response:
-            response.raise_for_status()
+        response.release()
 
         data = await self._poll_qr_login()
         if data.get('command') != 'showQRCode':
@@ -395,8 +451,7 @@ class MOSDiaryClient:
             data={},
             headers=headers
         )
-        async with response:
-            response.raise_for_status()
+        response.release()
 
         if response.url.path.startswith('/sps/login/methods2/'):
             if get_code is None:
@@ -415,8 +470,7 @@ class MOSDiaryClient:
                     use_auth=False,
                     headers={'Referer': referer},
                 )
-                async with response:
-                    response.raise_for_status()
+                response.release()
 
             if verification_method == 'flash_call':
                 referer = str(response.url)
@@ -431,8 +485,7 @@ class MOSDiaryClient:
                         'Referer': referer,
                     },
                 )
-                async with response:
-                    response.raise_for_status()
+                response.release()
 
                 code_field = 'code'
                 code_length = 4
@@ -474,7 +527,6 @@ class MOSDiaryClient:
                     },
                 )
                 async with response:
-                    response.raise_for_status()
                     if response.url.path in code_paths:
                         config = search(
                             r'var vrfCodeConf\s*=\s*(\{.*?\});',
@@ -505,8 +557,7 @@ class MOSDiaryClient:
                         'Referer': str(response.url),
                     },
                 )
-                async with response:
-                    response.raise_for_status()
+                response.release()
 
         token_cookie = None
         refresh_cookie = None
@@ -536,7 +587,12 @@ class MOSDiaryClient:
         Returns:
             ProfileDeatail: Подробные данные профиля.
         """
-        return ProfileDeatail.model_validate(await self._send_request('GET', 'https://school.mos.ru/v3/userinfo'))
+        response = await self._send_request('GET', 'https://school.mos.ru/v3/userinfo')
+        return _validate_model(
+            ProfileDeatail,
+            response,
+            'МЭШ вернул некорректные подробные данные профиля'
+        )
 
 
     async def get_family_info(self)-> Family:
@@ -548,8 +604,13 @@ class MOSDiaryClient:
             Family: Данные профиля, детей и представителей семьи.
         """
         resp = await self._send_request('GET', 'family/web/v1/profile')
-        self.id = resp.get('profile')['id']
-        return Family.model_validate(resp)
+        family = _validate_model(
+            Family,
+            resp,
+            'МЭШ вернул некорректные данные семьи'
+        )
+        self.id = family.profile.id
+        return family
 
 
     async def get_base_info(self)-> UserInfo:
@@ -560,7 +621,12 @@ class MOSDiaryClient:
         Returns:
             UserInfo: Основные данные учётной записи МЭШ.
         """
-        info = UserInfo.model_validate(await self._send_request('GET', 'https://school.mos.ru/v1/oauth/userinfo'))
+        response = await self._send_request('GET', 'https://school.mos.ru/v1/oauth/userinfo')
+        info = _validate_model(
+            UserInfo,
+            response,
+            'МЭШ вернул некорректные базовые данные профиля'
+        )
         self.uid = info.person_uid
         return info
 
@@ -580,7 +646,12 @@ class MOSDiaryClient:
                 'dates': ','.join(lesson_date.isoformat() for lesson_date in dates)
             }
         )
-        return [LessonDay.model_validate(day) for day in response['payload']]
+        return _parse_response_list(
+            response,
+            key='payload',
+            parser=LessonDay.model_validate,
+            error_message='МЭШ вернул некорректное расписание уроков'
+        )
 
 
     async def get_schedule_events(
@@ -621,15 +692,12 @@ class MOSDiaryClient:
                 'X-mes-subsystem': 'familyweb'
             }
         )
-        try:
-            schedule_events = response['response']
-            if not isinstance(schedule_events, list):
-                raise TypeError('Поле response не является списком')
-            return [parse_schedule_event(schedule_event) for schedule_event in schedule_events]
-        except (KeyError, TypeError, ValidationError, ValueError) as error:
-            raise InvalidResponseException(
-                'МЭШ вернул некорректный список событий расписания'
-            ) from error
+        return _parse_response_list(
+            response,
+            key='response',
+            parser=parse_schedule_event,
+            error_message='МЭШ вернул некорректный список событий расписания'
+        )
 
 
     async def get_homework(self, from_date: date, to_date: date)-> list[Homework]:
@@ -646,7 +714,16 @@ class MOSDiaryClient:
         if self.id is None:
             await self.get_family_info()
 
-        return [Homework.model_validate(homework) for homework in (await self._send_request('GET', f'family/web/v1/homeworks?from={from_date}&to={to_date}&student_id={self.id}'))['payload']]
+        response = await self._send_request(
+            'GET',
+            f'family/web/v1/homeworks?from={from_date}&to={to_date}&student_id={self.id}'
+        )
+        return _parse_response_list(
+            response,
+            key='payload',
+            parser=Homework.model_validate,
+            error_message='МЭШ вернул некорректный список домашних заданий'
+        )
 
 
     async def get_marks(self)-> list[SubjectMark]:
@@ -657,7 +734,16 @@ class MOSDiaryClient:
         """
         if self.id is None:
             await self.get_family_info()
-        return [SubjectMark.model_validate(mark) for mark in (await self._send_request('GET', f'family/web/v1/subject_marks?student_id={self.id}'))['payload']]
+        response = await self._send_request(
+            'GET',
+            f'family/web/v1/subject_marks?student_id={self.id}'
+        )
+        return _parse_response_list(
+            response,
+            key='payload',
+            parser=SubjectMark.model_validate,
+            error_message='МЭШ вернул некорректный список оценок по предметам'
+        )
 
 
     async def get_date_marks(self, from_date: date, to_date: date)-> list[Mark]:
@@ -673,4 +759,13 @@ class MOSDiaryClient:
         """
         if self.id is None:
             await self.get_family_info()
-        return [Mark.model_validate(mark) for mark in (await self._send_request('GET', f'family/web/v1/marks?student_id={self.id}&from={from_date}&to={to_date}'))['payload']]
+        response = await self._send_request(
+            'GET',
+            f'family/web/v1/marks?student_id={self.id}&from={from_date}&to={to_date}'
+        )
+        return _parse_response_list(
+            response,
+            key='payload',
+            parser=Mark.model_validate,
+            error_message='МЭШ вернул некорректный список оценок'
+        )

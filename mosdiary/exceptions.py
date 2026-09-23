@@ -2,15 +2,48 @@ class MOSDiaryBaseException(Exception):
     """Базовое исключение `mosdiary`."""
 
 
-class AuthenticationRequiredException(MOSDiaryBaseException):
+class APIException(MOSDiaryBaseException):
+    """Базовое исключение при взаимодействии с API МЭШ."""
+
+
+class APIHTTPException(APIException):
+    """API МЭШ вернул ошибочный HTTP-статус."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        status_code: int,
+        method: str | None = None,
+        url: str | None = None
+    ) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+        self.method = method
+        self.url = url
+
+
+class APIConnectionException(APIException, ConnectionError):
+    """Не удалось установить или поддержать соединение с API МЭШ."""
+
+
+class APITimeoutException(APIException, TimeoutError):
+    """Истёк тайм-аут запроса к API МЭШ."""
+
+
+class AuthenticationException(MOSDiaryBaseException):
+    """Базовое исключение авторизации в МЭШ."""
+
+
+class AuthenticationRequiredException(AuthenticationException):
     """Для запроса не передан токен авторизации."""
 
 
-class TokenExpired(MOSDiaryBaseException, TimeoutError):
+class TokenExpired(AuthenticationException):
     """Срок действия `aupd_token` истёк."""
 
 
-class InvalidResponseException(MOSDiaryBaseException):
+class InvalidResponseException(APIException):
     """МЭШ вернул ответ неожиданного формата."""
 
 
@@ -67,6 +100,11 @@ class LoginTokenMissingException(QRLoginException):
 
 
 __all__ = (
+    'APIConnectionException',
+    'APIException',
+    'APIHTTPException',
+    'APITimeoutException',
+    'AuthenticationException',
     'AuthenticationRequiredException',
     'InvalidLoginParameterException',
     'InvalidResponseException',

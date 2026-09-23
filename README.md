@@ -160,6 +160,32 @@ for mark in marks:
     print(mark.date.strftime("%d.%m"), mark.subject_name, mark.value)
 ```
 
+## ⚠️ Обработка ошибок
+
+Сетевые, HTTP-ошибки и некорректные ответы МЭШ имеют общий базовый тип `APIException`:
+
+```python
+from mosdiary.exceptions import APIException, TokenExpired
+
+try:
+    marks = await diary.get_marks()
+except TokenExpired:
+    print("Токен истёк — требуется повторный вход")
+except APIException as error:
+    print(f"Не удалось получить данные МЭШ: {error}")
+```
+
+Для более точной обработки доступны подклассы:
+
+- `APIHTTPException` — API вернул ошибочный HTTP-статус;
+- `APIConnectionException` — соединение с МЭШ не установлено или разорвано;
+- `APITimeoutException` — истёк тайм-аут запроса;
+- `InvalidResponseException` — ответ не удалось декодировать или проверить по ожидаемой схеме.
+
+`APIHTTPException` содержит атрибуты `status_code`, `method` и `url`. URL сохраняется без query-параметров.
+
+Для обработки любого контролируемого исключения библиотеки используйте `MOSDiaryBaseException`.
+
 ## 🛠 Разработка
 
 ```bash

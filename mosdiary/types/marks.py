@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
@@ -109,8 +109,14 @@ class _MarkBase(BaseModel):
     value: str
     """Значение оценки"""
 
-    comment: str
+    comment: str | None
     """Комментарий к оценке"""
+
+    #Пустой комментарий = None
+    @field_validator('comment', mode='before')
+    @classmethod
+    def empty_comment_to_none(cls, value: object) -> object:
+        return None if value == '' else value
 
     weight: int
     """Вес оценки"""

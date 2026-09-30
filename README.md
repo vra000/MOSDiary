@@ -138,8 +138,20 @@ with open("mos-id-qr.png", "wb") as file:
 | `get_homework(from_date, to_date)` | `list[Homework]` | Домашние задания за период |
 | `get_marks()` | `list[SubjectMark]` | Сводные оценки по предметам |
 | `get_date_marks(from_date, to_date)` | `list[Mark]` | Оценки за период |
-| `refresh_session(role_id=1)` | `str` | Обновление токена после QR-входа |
+| `refresh_session()` | `tuple[str, str]` | Обновление пары токенов по `aupd_refresh_token` |
 | `logout()` | `bool` | Завершение текущей сессии |
+
+Для обновления сессии требуется cookie `aupd_refresh_token`. После QR-входа она уже доступна в клиенте. Если токены сохранены и клиент создан заново, передайте оба токена:
+
+```python
+async with MOSDiaryClient(
+    aupd_token=saved_access_token,
+    aupd_refresh_token=saved_refresh_token,
+) as diary:
+    new_access_token, new_refresh_token = await diary.refresh_session()
+```
+
+Одну и ту же пару cookies можно использовать для успешного обновления только один раз. После каждого вызова сохраняйте оба новых токена: для следующего обновления нужен новый `aupd_refresh_token`. Тот же экземпляр клиента подставит его автоматически.
 
 Все даты передаются как объекты `datetime.date`. Ответы представлены Pydantic-моделями: их можно читать через атрибуты или преобразовывать в словари с помощью `model_dump()`.
 

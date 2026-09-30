@@ -95,7 +95,7 @@ def _parse_response_list(
 
 
 class MOSDiaryClient:
-    def __init__(self, aupd_token: str | None = None, timeout: float = 30, user_agent: str | None = None):
+    def __init__(self, aupd_token: str | None = None, timeout: float = 30, user_agent: str | None = None, aupd_refresh_token: str | None = None):
         """
         Клиент МЭШ
 
@@ -103,6 +103,7 @@ class MOSDiaryClient:
             aupd_token (`str | None`): Токен (кука) авторизации
             timeout (`float`): Тайм-аут запросов в секундах.
             user_agent (`str | None`): User-Agent для запросов.
+            aupd_refresh_token (`str | None`): Refresh cookie для обновления сессии.
 
         Returns:
             None: Создаёт клиент без выполнения сетевых запросов.
@@ -110,8 +111,12 @@ class MOSDiaryClient:
         
         self.aupd_token = aupd_token
         """Токен (кука) авторизации"""
+        self.aupd_refresh_token = aupd_refresh_token
+        """Refresh cookie для обновления сессии"""
         self.timeout = timeout
+        """Тайм-аут запросов в секундах."""
         self.user_agent = user_agent
+        """User-Agent для запросов."""
 
         self.id: int | None = None
         """ID аккаунта МЭШ"""
@@ -225,7 +230,7 @@ class MOSDiaryClient:
 
                 if use_auth and response.status == 401:
                     response.release()
-                    raise TokenExpired('Срок действия aupd_token истёк')
+                    raise TokenExpired('Сервер отклонил aupd_token (HTTP 401)')
 
                 if return_type != 'bool':
                     self._raise_for_status(response)
@@ -250,8 +255,6 @@ class MOSDiaryClient:
             except (ClientSSLError, ServerFingerprintMismatch) as error:
                 raise APIConnectionException('Не удалось установить защищённое соединение с МЭШ') from error
             except ClientConnectionError as error:
-                # POST could already have been processed, and a streamed body
-                # could already be consumed. Neither can be safely replayed.
                 if method == 'GET' and 'data' not in kwargs and retry_number < 2:
                     await sleep(0.5 * 2 ** retry_number)
                     retry_number += 1
@@ -280,37 +283,61 @@ class MOSDiaryClient:
             self.id = None
             self.uid = None
             self.aupd_token = None
+            self.aupd_refresh_token = None
             await self.close()
             return True
         return False
 
 
-    async def refresh_session(self, role_id: int = 1)-> str:
+    async def refresh_session(self)-> tuple[str, str]:
         """
-        Обновить `aupd_token` в текущей авторизованной HTTP-сессии.
+        Обновить пару токенов с помощью `aupd_refresh_token`.
 
-        Требует cookies, созданные QR-входом в этом же экземпляре клиента;
-        одного сохранённого `aupd_token` недостаточно.
+        Refresh token берётся из атрибута клиента или cookie текущей
+        HTTP-сессии. Одну и ту же пару cookies можно использовать для
+        успешного обновления только один раз, так как они изменятся при
+        рефреше и старые перестанут быть актуальными.
 
-        Args:
-            role_id (`int = 1`): Ваш ID роли. 1 - ученик
         Returns:
-            str:
-                Токен авторизации
+            tuple[str, str]: Пара (`aupd_token`, `aupd_refresh_token`)
+                после обновления.
         """
-        aupd_token = await self._send_request(
-            'GET',
-            'https://school.mos.ru/v2/token/refresh',
-            return_type='text',
-            params={'roleId': role_id, 'subsystem': 2},
-            headers={
-                'Accept': 'application/json, text/plain, */*',
-                'CrossDomain': 'true',
-                'Referer': 'https://school.mos.ru/auth/callback'
-            },
-        )
+        refresh_token = self.aupd_refresh_token
+        if refresh_token is None:
+            cookie = self._ensure_session().cookie_jar.filter_cookies(URL('https://school.mos.ru/v3/token/refresh')).get('aupd_refresh_token')
+            if cookie is not None:
+                refresh_token = cookie.value
+        if not refresh_token:
+            raise AuthenticationRequiredException('Для обновления сессии нужен aupd_refresh_token')
+
+        try:
+            data = await self._send_request(
+                'POST',
+                'https://school.mos.ru/v3/token/refresh',
+                use_auth=False,
+                cookies={'aupd_refresh_token': refresh_token},
+                data={},
+                headers={
+                    'Origin': 'https://school.mos.ru',
+                    'Referer': 'https://school.mos.ru/diary/schedules/day',
+                    'Accept': 'application/json'
+                }
+            )
+        except APIHTTPException as error:
+            if error.status_code == 401:
+                raise TokenExpired('Сервер отклонил aupd_refresh_token (HTTP 401)') from error
+            raise
+
+        aupd_token = data.get('access_token')
+        new_refresh_token = data.get('refresh_token')
+        if (
+            not isinstance(aupd_token, str) or not aupd_token
+            or not isinstance(new_refresh_token, str) or not new_refresh_token
+        ):
+            raise InvalidResponseException('МЭШ не вернул токены после обновления сессии')
         self.aupd_token = aupd_token
-        return aupd_token
+        self.aupd_refresh_token = new_refresh_token
+        return aupd_token, new_refresh_token
 
 
     async def start_qr_login(self, return_type: Literal['link', 'qr', 'link&qr'] = 'link')-> tuple[str, int] | tuple[bytes, int] | tuple[str, bytes, int]:
@@ -578,6 +605,7 @@ class MOSDiaryClient:
         aupd_token = token_cookie.value
         aupd_refresh_token = refresh_cookie.value
         self.aupd_token = aupd_token
+        self.aupd_refresh_token = aupd_refresh_token
         return aupd_token, aupd_refresh_token
 
 

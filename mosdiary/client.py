@@ -278,7 +278,7 @@ class MOSDiaryClient:
             bool:
                 Выполнен ли запрос успешно
         """
-        success = await self._send_request('GET', 'https://school.mos.ru/v3/auth/logout', return_type='bool')
+        success = await self._send_request('GET', 'https://school.mos.ru/v3/auth/logout', return_type='bool', allow_redirects=True)
         if success:
             self.id = None
             self.uid = None

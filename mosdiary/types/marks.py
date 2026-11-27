@@ -53,7 +53,7 @@ class SubjectMarkPeriod(BaseModel):
     count: int
     """Кол-во оценок"""
 
-    target: MarkTarget
+    target: MarkTarget | None
     """Цель текущей оценки до следующего балла"""
 
     fixed_value: int | None

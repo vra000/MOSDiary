@@ -12,12 +12,10 @@ class SubjectMark(BaseModel):
     """Школьная оценка по предмету"""
     model_config = ConfigDict(extra='ignore')
 
-    #TODO: Описать
     average: Decimal
+    """Средний балл за аттестационный период"""
 
-    dynamic_type: MarkDynamicType = Field(
-        validation_alias=AliasChoices('dynamic_type', 'dynamic')
-    )
+    dynamic_type: MarkDynamicType = Field(validation_alias=AliasChoices('dynamic_type', 'dynamic'))
     """Динамика среднего балла по оценке"""
 
     periods: list[SubjectMarkPeriod]
@@ -58,8 +56,8 @@ class SubjectMarkPeriod(BaseModel):
     target: MarkTarget
     """Цель текущей оценки до следующего балла"""
 
-    #TODO: Описать
-    fixed_value: Any | None
+    fixed_value: int | None
+    """Округлённое значение среднего балла"""
 
     start_date: date = Field(validation_alias='start_iso')
     """Дата начала учебного периода"""
